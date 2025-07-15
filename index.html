@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Live Image Slideshow</title>
+  <title>Image Slideshow</title>
   <style>
     body {
       margin: 0;
@@ -12,66 +12,111 @@
       display: flex;
       flex-direction: column;
       align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
     }
+
     h1 {
       margin: 20px;
       font-size: 24px;
     }
-    .carousel {
-      display: flex;
-      overflow-x: auto;
-      scroll-snap-type: x mandatory;
-      -webkit-overflow-scrolling: touch;
+
+    .slideshow-container {
+      position: relative;
       width: 100%;
-      padding: 0 10px;
-    }
-    .carousel::-webkit-scrollbar {
-      display: none;
-    }
-    .carousel img {
-      scroll-snap-align: start;
+      max-width: 90vw;
       height: 90vh;
-      margin: 0 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .slideshow-container img {
+      max-height: 100%;
+      max-width: 100%;
       object-fit: contain;
       border-radius: 12px;
       box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
     }
+
+    .nav-button {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 36px;
+      background: rgba(0, 0, 0, 0.5);
+      border: none;
+      color: #fff;
+      padding: 10px 20px;
+      cursor: pointer;
+      z-index: 1;
+    }
+
+    .prev {
+      left: 10px;
+    }
+
+    .next {
+      right: 10px;
+    }
+
+    .nav-button:disabled {
+      opacity: 0.3;
+      cursor: default;
+    }
   </style>
 </head>
 <body>
-  <h1>Live Image Gallery</h1>
-  <div id="carousel" class="carousel"></div>
+  <h1>Live Image Viewer</h1>
+  <div class="slideshow-container">
+    <button class="nav-button prev" onclick="showPrev()">‹</button>
+    <img id="slideshow" src="" alt="Image Viewer">
+    <button class="nav-button next" onclick="showNext()">›</button>
+  </div>
 
   <script>
     const folderId = "148r9D_U53sqOnWpe30kzfyaGfGFFFr3k";
     const apiKey = "AIzaSyD6oP0JhogqJLZqtn_krNI83XTL17clmm4";
 
+    let images = [];
+    let currentIndex = 0;
+
     async function loadImages() {
-  const url = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+mimeType+contains+'image/'&orderBy=createdTime+desc&fields=files(id,name)&key=${apiKey}`;
-  const res = await fetch(url);
-  const data = await res.json();
-  const container = document.getElementById('carousel');
+      const url = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+mimeType+contains+'image/'&orderBy=createdTime+desc&fields=files(id,name)&key=${apiKey}`;
+      const res = await fetch(url);
+      const data = await res.json();
 
-  if (data.files.length === 0) {
-    container.innerHTML = "<p>No images found in the folder.</p>";
-    return;
-  }
+      if (!data.files || data.files.length === 0) {
+        document.getElementById("slideshow").alt = "No images found";
+        return;
+      }
 
-  data.files.forEach(file => {
-    const img = document.createElement('img');
-    img.src = `https://lh3.googleusercontent.com/d/${file.id}`;
-    img.alt = file.name;
-    container.appendChild(img);
-  });
-}
+      images = data.files.map(file => `https://lh3.googleusercontent.com/d/${file.id}`);
+      showImage(0); // Show the most recent image
+    }
+
+    function showImage(index) {
+      if (images.length === 0) return;
+      currentIndex = index;
+      document.getElementById("slideshow").src = images[currentIndex];
+      document.querySelector(".prev").disabled = currentIndex === 0;
+      document.querySelector(".next").disabled = currentIndex === images.length - 1;
+    }
+
+    function showPrev() {
+      if (currentIndex > 0) {
+        showImage(currentIndex - 1);
+      }
+    }
+
+    function showNext() {
+      if (currentIndex < images.length - 1) {
+        showImage(currentIndex + 1);
+      }
+    }
 
     loadImages();
-
-    // Optional auto-refresh every 60 seconds
-    setInterval(() => {
-      document.getElementById('carousel').innerHTML = "";
-      loadImages();
-    }, 60000);
   </script>
 </body>
 </html>
