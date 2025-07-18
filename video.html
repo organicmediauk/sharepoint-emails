@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Video Viewer</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      background: #000;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    h1 {
+      margin: 20px;
+      font-size: 24px;
+    }
+
+    .slideshow-container {
+      position: relative;
+      width: 100%;
+      max-width: 90vw;
+      height: 90vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    video {
+      max-height: 100%;
+      max-width: 100%;
+      border-radius: 12px;
+      box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+    }
+
+    .nav-button {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 36px;
+      background: rgba(0, 0, 0, 0.5);
+      border: none;
+      color: #fff;
+      padding: 10px 20px;
+      cursor: pointer;
+      z-index: 1;
+    }
+
+    .prev { left: 10px; }
+    .next { right: 10px; }
+    .nav-button:disabled { opacity: 0.3; cursor: default; }
+  </style>
+</head>
+<body>
+  <h1>Live Video Gallery</h1>
+  <div class="slideshow-container">
+    <button class="nav-button prev" onclick="showPrev()">‹</button>
+    <video id="videoPlayer" controls autoplay muted loop></video>
+    <button class="nav-button next" onclick="showNext()">›</button>
+  </div>
+
+  <script>
+    const folderId = "148r9D_U53sqOnWpe30kzfyaGfGFFFr3k";
+    const apiKey = "AIzaSyD6oP0JhogqJLZqtn_krNI83XTL17clmm4";
+
+    let videos = [];
+    let currentIndex = 0;
+
+    async function loadVideos() {
+      const url = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+mimeType+contains+'video/'&orderBy=createdTime+desc&fields=files(id,name,mimeType)&key=${apiKey}`;
+      const res = await fetch(url);
+      const data = await res.json();
+
+      if (!data.files || data.files.length === 0) {
+        document.getElementById("videoPlayer").outerHTML = "<p style='color:white;'>No videos found in the folder.</p>";
+        return;
+      }
+
+      videos = data.files.map(file => `https://lh3.googleusercontent.com/d/${file.id}`);
+      showVideo(0);
+    }
+
+    function showVideo(index) {
+      if (videos.length === 0) return;
+      currentIndex = index;
+      document.getElementById("videoPlayer").src = videos[currentIndex];
+      document.querySelector(".prev").disabled = currentIndex === 0;
+      document.querySelector(".next").disabled = currentIndex === videos.length - 1;
+    }
+
+    function showPrev() {
+      if (currentIndex > 0) {
+        showVideo(currentIndex - 1);
+      }
+    }
+
+    function showNext() {
+      if (currentIndex < videos.length - 1) {
+        showVideo(currentIndex + 1);
+      }
+    }
+
+    loadVideos();
+  </script>
+</body>
+</html>
