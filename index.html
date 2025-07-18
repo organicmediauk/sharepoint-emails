@@ -41,27 +41,28 @@
       font-weight: bold;
     }
 
-    .viewer {
-      display: none;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      height: 80vh;
-      position: relative;
-    }
+.viewer {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 600px;
+  position: relative;
+  overflow: hidden;
+}
 
-    .viewer.active {
-      display: flex;
-    }
+.viewer.active {
+  display: flex;
+}
 
-    .viewer img, .viewer video {
-      max-height: 100%;
-      max-width: 100%;
-      object-fit: contain;
-      border-radius: 12px;
-      box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
-    }
+.viewer img, .viewer video {
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+}
 
     .nav-button {
       position: absolute;
