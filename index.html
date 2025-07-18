@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>Combined Image & Video Viewer</title>
+  <title>Tabbed Image & Video Gallery</title>
   <style>
     body {
       margin: 0;
@@ -12,32 +12,55 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
       height: 100vh;
       overflow: hidden;
     }
 
     h1 {
-      margin: 20px;
+      margin: 20px 0 10px;
       font-size: 24px;
     }
 
-    .slideshow-container {
-      position: relative;
-      width: 100%;
-      max-width: 90vw;
-      height: 90vh;
+    .tabs {
       display: flex;
-      align-items: center;
       justify-content: center;
+      margin-bottom: 10px;
     }
 
-    img, video {
+    .tab {
+      padding: 10px 20px;
+      margin: 0 5px;
+      background: #222;
+      color: #fff;
+      cursor: pointer;
+      border-radius: 6px 6px 0 0;
+    }
+
+    .tab.active {
+      background: #444;
+      font-weight: bold;
+    }
+
+    .viewer {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 80vh;
+      position: relative;
+    }
+
+    .viewer.active {
+      display: flex;
+    }
+
+    .viewer img, .viewer video {
       max-height: 100%;
       max-width: 100%;
+      object-fit: contain;
       border-radius: 12px;
       box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
-      object-fit: contain;
     }
 
     .nav-button {
@@ -60,75 +83,91 @@
 </head>
 <body>
   <h1>Live Gallery</h1>
-  <div class="slideshow-container">
-    <button class="nav-button prev" onclick="showPrev()">‹</button>
-    <div id="mediaDisplay"></div>
-    <button class="nav-button next" onclick="showNext()">›</button>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('images')">🖼 Images</div>
+    <div class="tab" onclick="switchTab('videos')">🎥 Videos</div>
+  </div>
+
+  <div id="images" class="viewer active">
+    <button class="nav-button prev" onclick="showPrev('images')">‹</button>
+    <div id="imageDisplay"></div>
+    <button class="nav-button next" onclick="showNext('images')">›</button>
+  </div>
+
+  <div id="videos" class="viewer">
+    <button class="nav-button prev" onclick="showPrev('videos')">‹</button>
+    <div id="videoDisplay"></div>
+    <button class="nav-button next" onclick="showNext('videos')">›</button>
   </div>
 
   <script>
     const folderId = "148r9D_U53sqOnWpe30kzfyaGfGFFFr3k";
     const apiKey = "AIzaSyD6oP0JhogqJLZqtn_krNI83XTL17clmm4";
 
-    let media = [];
-    let currentIndex = 0;
+    let imageFiles = [];
+    let videoFiles = [];
+    let currentIndex = { images: 0, videos: 0 };
 
     async function loadMedia() {
       const url = `https://www.googleapis.com/drive/v3/files?q='${folderId}'+in+parents+and+(mimeType+contains+'image/'+or+mimeType+contains+'video/')&orderBy=createdTime+desc&fields=files(id,name,mimeType)&key=${apiKey}`;
       const res = await fetch(url);
       const data = await res.json();
+      if (!data.files || data.files.length === 0) return;
 
-      if (!data.files || data.files.length === 0) {
-        document.getElementById("mediaDisplay").innerHTML = "<p style='color:white;'>No media found.</p>";
+      imageFiles = data.files.filter(f => f.mimeType.startsWith("image/")).map(f => ({ src: `https://lh3.googleusercontent.com/d/${f.id}`, name: f.name }));
+      videoFiles = data.files.filter(f => f.mimeType.startsWith("video/")).map(f => ({ src: `https://lh3.googleusercontent.com/d/${f.id}`, name: f.name }));
+
+      showMedia("images", 0);
+      showMedia("videos", 0);
+    }
+
+    function switchTab(tab) {
+      document.querySelectorAll(".tab").forEach(el => el.classList.remove("active"));
+      document.querySelectorAll(".viewer").forEach(el => el.classList.remove("active"));
+      document.querySelector(`.tab[onclick*='${tab}']`).classList.add("active");
+      document.getElementById(tab).classList.add("active");
+    }
+
+    function showMedia(type, index) {
+      const displayId = type === "images" ? "imageDisplay" : "videoDisplay";
+      const display = document.getElementById(displayId);
+      const files = type === "images" ? imageFiles : videoFiles;
+
+      if (!files.length) {
+        display.innerHTML = `<p style="color: white;">No ${type} available.</p>`;
         return;
       }
 
-      media = data.files.map(file => ({
-        type: file.mimeType.startsWith("video/") ? "video" : "image",
-        src: `https://lh3.googleusercontent.com/d/${file.id}`,
-        name: file.name
-      }));
+      currentIndex[type] = index;
+      display.innerHTML = "";
 
-      showMedia(0);
-    }
-
-    function showMedia(index) {
-      if (media.length === 0) return;
-      currentIndex = index;
-
-      const container = document.getElementById("mediaDisplay");
-      container.innerHTML = ""; // Clear existing
-
-      const item = media[currentIndex];
-      if (item.type === "image") {
+      if (type === "images") {
         const img = document.createElement("img");
-        img.src = item.src;
-        img.alt = item.name;
-        container.appendChild(img);
-      } else if (item.type === "video") {
+        img.src = files[index].src;
+        img.alt = files[index].name;
+        display.appendChild(img);
+      } else {
         const video = document.createElement("video");
-        video.src = item.src;
+        video.src = files[index].src;
         video.controls = true;
         video.autoplay = true;
         video.muted = true;
         video.loop = true;
-        container.appendChild(video);
+        display.appendChild(video);
       }
 
-      document.querySelector(".prev").disabled = currentIndex === 0;
-      document.querySelector(".next").disabled = currentIndex === media.length - 1;
+      document.querySelector(`#${type} .prev`).disabled = index === 0;
+      document.querySelector(`#${type} .next`).disabled = index === files.length - 1;
     }
 
-    function showPrev() {
-      if (currentIndex > 0) {
-        showMedia(currentIndex - 1);
-      }
+    function showPrev(type) {
+      if (currentIndex[type] > 0) showMedia(type, currentIndex[type] - 1);
     }
 
-    function showNext() {
-      if (currentIndex < media.length - 1) {
-        showMedia(currentIndex + 1);
-      }
+    function showNext(type) {
+      const files = type === "images" ? imageFiles : videoFiles;
+      if (currentIndex[type] < files.length - 1) showMedia(type, currentIndex[type] + 1);
     }
 
     loadMedia();
