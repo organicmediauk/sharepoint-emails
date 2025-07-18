@@ -62,16 +62,16 @@
       display: flex;
     }
 
- .viewer img,
-.viewer video {
-  max-height: 350px;
-  max-width: 90%;
-  object-fit: contain;
-  margin: auto;
-  border-radius: 10px;
-  box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
-  display: block;
-}
+    .viewer img,
+    .viewer video {
+      max-height: 280px;
+      max-width: 90%;
+      object-fit: contain;
+      margin: auto;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+      display: block;
+    }
 
     .nav-button {
       position: absolute;
@@ -141,8 +141,13 @@
       const data = await res.json();
       if (!data.files || data.files.length === 0) return;
 
-      imageFiles = data.files.filter(f => f.mimeType.startsWith("image/")).map(f => ({ src: `https://lh3.googleusercontent.com/d/${f.id}`, name: f.name }));
-      videoFiles = data.files.filter(f => f.mimeType.startsWith("video/")).map(f => ({ src: `https://lh3.googleusercontent.com/d/${f.id}`, name: f.name }));
+      imageFiles = data.files
+        .filter(f => f.mimeType.startsWith("image/"))
+        .map(f => ({ src: `https://lh3.googleusercontent.com/d/${f.id}`, name: f.name }));
+
+      videoFiles = data.files
+        .filter(f => f.mimeType.startsWith("video/"))
+        .map(f => ({ src: `https://drive.google.com/uc?export=download&id=${f.id}`, name: f.name }));
 
       showMedia("images", 0);
       showMedia("videos", 0);
